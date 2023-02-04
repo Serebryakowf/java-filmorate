@@ -1,52 +1,52 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmsService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
+@Validated
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/films")
 public class FilmController {
     private final FilmsService filmsService;
 
-    public FilmController(FilmsService filmsService) {
-        this.filmsService = filmsService;
-    }
-
     @PostMapping
-    public Film createFilm(@Valid @RequestBody Film film) {
+    public Film create(@Valid @RequestBody Film film) {
         log.info("Creating Film {}", film);
-        return filmsService.createFilm(film);
+        return filmsService.create(film);
     }
 
     @PutMapping
-    public Film updateFilm(@Valid @RequestBody Film film) {
+    public Film update(@Valid @RequestBody Film film) {
         log.info("Updating Film {}", film);
-        return filmsService.updateFilm(film);
+        return filmsService.update(film);
     }
 
     @GetMapping
-    public List<Film> getFilms() {
+    public List<Film> getList() {
         log.info("Getting all films");
-        return filmsService.getFilms();
+        return filmsService.getList();
     }
 
     @GetMapping("/{id}")
-    public Film getFilmById(@PathVariable int id) {
+    public Film getById(@PathVariable Integer id) {
         log.info("Getting Film by id");
-        return filmsService.getFilmById(id);
+        return filmsService.getById(id);
     }
 
     @DeleteMapping("/{id}")
-    public Film removeFilmById(@PathVariable Integer id) {
+    public Film removeById(@PathVariable Integer id) {
         log.info("Removing Film by id");
-        return filmsService.removeFilmById(id);
+        return filmsService.removeById(id);
     }
 
     @PutMapping("/{id}/like/{userId}")
@@ -62,9 +62,9 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getTopFilms(@RequestParam(required = false) Integer count) {
-        log.info("Getting a top films");
-        return filmsService.getTopFilms(Objects.requireNonNullElse(count, 10));
+    public List<Film> getTopFilms(@Positive @RequestParam(defaultValue = "10") Integer count) {
+        log.info("Getting top films");
+        return filmsService.getTopFilms(count);
     }
 
 }

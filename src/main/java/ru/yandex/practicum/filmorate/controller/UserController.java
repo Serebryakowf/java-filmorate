@@ -1,41 +1,37 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.UsersService;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
-    private final UsersService usersService;
-
-    public UserController(UsersService usersService) {
-        this.usersService = usersService;
-    }
+    private final UserService usersService;
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user) {
+    public User create(@Valid @RequestBody User user) {
         log.debug("Creating User {}", user);
-        return usersService.createUser(user);
+        return usersService.create(user);
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody User user) {
+    public User update(@Valid @RequestBody User user) {
         log.info("Updating User {}", user);
-        return usersService.updateUser(user);
+        return usersService.update(user);
     }
 
     @GetMapping
-    public List<User> getUsers() {
+    public List<User> getList() {
         log.info("Getting all users");
-        return usersService.getUsers();
+        return usersService.getList();
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -63,9 +59,9 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Integer id) {
+    public User getById(@PathVariable Integer id) {
         log.info("Getting User by id");
-        return usersService.getUserById(id);
+        return usersService.getById(id);
     }
 
     @DeleteMapping("/{id}")

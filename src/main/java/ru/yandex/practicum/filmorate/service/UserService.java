@@ -1,8 +1,10 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.InternalServerException;
+import ru.yandex.practicum.filmorate.exception.NotFoundExcetion;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -11,37 +13,40 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class UsersService {
+@RequiredArgsConstructor
+public class UserService {
     private final UserStorage userStorage;
 
-    @Autowired
-    public UsersService(UserStorage userStorage) {
-        this.userStorage = userStorage;
+    public User create(User user) {
+        checkName(user);
+        checkLogin(user);
+        return userStorage.create(user);
     }
 
-    public User createUser(User user) {
-        return userStorage.createUser(user);
+    public User update(User user) {
+        getById(user.getId());
+        checkName(user);
+        checkLogin(user);
+        return userStorage.update(user);
     }
 
-    public User updateUser(User user) {
-        return userStorage.updateUser(user);
+    public List<User> getList() {
+        return userStorage.getList();
     }
 
-    public List<User> getUsers() {
-        return new ArrayList<>(userStorage.getUsers().values());
-    }
-
-    public User getUserById(int id) {
-        return userStorage.getUserById(id);
+    public User getById(int id) {
+        return userStorage.getById(id).orElseThrow(() ->
+                new NotFoundExcetion(String.format("Пользователя с id %d не существует", id))
+        );
     }
 
     public User removeById(int id) {
-        return userStorage.removeUserById(id);
+        return userStorage.removeById(id);
     }
 
     public List<Integer> addFriend(int userId, int friendId) {
-        User firstUser = getUserById(userId);
-        User secondUser = getUserById(friendId);
+        User firstUser = getById(userId);
+        User secondUser = getById(friendId);
         if (firstUser.getFriends().contains(friendId)) {
             throw new InternalServerException(
                     String.format("Пользователи с id %d и %d уже являются друзьями", userId, friendId)
@@ -53,8 +58,8 @@ public class UsersService {
     }
 
     public List<Integer> removeFromFriends(int userId, int friendId) {
-        User firstUser = getUserById(userId);
-        User secondUser = getUserById(friendId);
+        User firstUser = getById(userId);
+        User secondUser = getById(friendId);
         if (!firstUser.getFriends().contains(friendId)) {
             throw new InternalServerException(
                     String.format("Пользователи с id %d и %d не являются друзьями", userId, friendId)
@@ -66,18 +71,30 @@ public class UsersService {
     }
 
     public List<User> getCommonFriends(int userId, int otherId) {
-        User firstUser = getUserById(userId);
-        User secondUser = getUserById(otherId);
+        User firstUser = getById(userId);
+        User secondUser = getById(otherId);
         return firstUser.getFriends().stream()
                 .filter(p -> secondUser.getFriends().contains(p))
-                .map(this::getUserById)
+                .map(this::getById)
                 .collect(Collectors.toList());
     }
 
     public List<User> getFriends(int userId) {
-        User user = getUserById(userId);
+        User user = getById(userId);
         return user.getFriends().stream()
-                .map(this::getUserById)
+                .map(this::getById)
                 .collect(Collectors.toList());
+    }
+
+    private void checkLogin(User user) {
+        if (user.getLogin().contains(" ")) {
+            throw new ValidationException("Недопустимы пробелы в login");
+        }
+    }
+
+    private void checkName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 }
