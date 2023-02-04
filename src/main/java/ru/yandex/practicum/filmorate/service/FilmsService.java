@@ -1,43 +1,64 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundExcetion;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@RequiredArgsConstructor
 @Service
 public class FilmsService {
     private static final LocalDate BEGINNING_OF_THE_CINEMA_ERA = LocalDate.of(1895, Month.DECEMBER, 28);
-    private final Map<Integer, Film> films = new HashMap<>();
-    private int id = 0;
+    private final FilmStorage filmStorage;
+    private final UserService usersService;
 
-    public Film createFilm(Film film) {
+    public Film create(Film film) {
         checkReleaseDate(film);
-        film.setId(getId());
-        films.put(film.getId(), film);
+        return filmStorage.create(film);
+    }
+
+    public Film update(Film film) {
+        getById(film.getId());
+        checkReleaseDate(film);
+        return filmStorage.update(film);
+    }
+
+    public List<Film> getList() {
+        return filmStorage.getList();
+    }
+
+    public Film getById(int id) {
+        return filmStorage.getById(id).orElseThrow(() ->
+                new NotFoundExcetion(String.format("Фильма с id %d не существует", id))
+        );
+    }
+
+    public Film removeById(int id) {
+        return filmStorage.removeById(id);
+    }
+
+    public Film addLike(int userId, int filmId) {
+        usersService.getById(userId);
+        Film film = getById(filmId);
+        film.getLikes().add(userId);
         return film;
     }
 
-    public Film updateFilm(Film film) {
-        if (!films.containsKey(film.getId())) {
-            throw new ValidationException("Film с данным id отсутствует");
-        }
-        checkReleaseDate(film);
-        films.put(film.getId(), film);
+    public Film removeLike(int userId, int filmId) {
+        usersService.getById(userId);
+        Film film = getById(filmId);
+        film.getLikes().remove(userId);
         return film;
     }
 
-    public List<Film> getFilms() {
-        return new ArrayList<>(films.values());
-    }
-    private int getId() {
-        return ++id;
+    public List<Film> getTopFilms(int count) {
+        return filmStorage.getTopFilms(count);
     }
 
     private void checkReleaseDate(Film film) {
@@ -45,5 +66,4 @@ public class FilmsService {
             throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895 года");
         }
     }
-
 }
